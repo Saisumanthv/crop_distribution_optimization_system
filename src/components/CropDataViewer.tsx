@@ -9,17 +9,18 @@ interface CropDataViewerProps {
 }
 
 export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) {
-  const [cropData, setCropData] = useState<CropData[]>([]);
+  const [currentRecord, setCurrentRecord] = useState<CropData | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
-  const [currentDataIndex, setCurrentDataIndex] = useState(0);
+  const [currentRecordIndex, setCurrentRecordIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [recordLoading, setRecordLoading] = useState(false);
 
   useEffect(() => {
-    fetchCropData();
+    fetchTotalCount();
   }, [refreshTrigger]);
 
-  const fetchCropData = async () => {
+  const fetchTotalCount = async () => {
     setLoading(true);
     try {
       const { count, error: countError } = await supabase
@@ -28,49 +29,64 @@ export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) 
 
       if (countError) throw countError;
       setTotalCount(count || 0);
-
-      const { data, error } = await supabase
-        .from('crop_production_data')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1000);
-
-      if (error) throw error;
-
-      setCropData(data || []);
     } catch (error) {
-      console.error('Error fetching crop data:', error);
+      console.error('Error fetching count:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleViewData = () => {
-    if (cropData.length > 0) {
-      setCurrentDataIndex(0);
+  const fetchRecordAtIndex = async (index: number) => {
+    if (index < 0 || index >= totalCount) return;
+
+    setRecordLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('crop_production_data')
+        .select('*')
+        .order('id', { ascending: true })
+        .range(index, index)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setCurrentRecord(data[0]);
+        setCurrentRecordIndex(index);
+      }
+    } catch (error) {
+      console.error('Error fetching record:', error);
+    } finally {
+      setRecordLoading(false);
+    }
+  };
+
+  const handleViewData = async () => {
+    if (totalCount > 0) {
+      await fetchRecordAtIndex(0);
       setShowModal(true);
     }
   };
 
-  const handleNextRecord = () => {
-    if (currentDataIndex < cropData.length - 1) {
-      setCurrentDataIndex(currentDataIndex + 1);
+  const handleNextRecord = async () => {
+    if (currentRecordIndex < totalCount - 1) {
+      await fetchRecordAtIndex(currentRecordIndex + 1);
     }
   };
 
-  const handlePreviousRecord = () => {
-    if (currentDataIndex > 0) {
-      setCurrentDataIndex(currentDataIndex - 1);
+  const handlePreviousRecord = async () => {
+    if (currentRecordIndex > 0) {
+      await fetchRecordAtIndex(currentRecordIndex - 1);
     }
   };
 
-  const handleGoToRecord = (index: number) => {
-    if (index >= 0 && index < cropData.length) {
-      setCurrentDataIndex(index);
+  const handleGoToRecord = async (index: number) => {
+    if (index >= 0 && index < totalCount) {
+      await fetchRecordAtIndex(index);
     }
   };
 
-  if (loading || cropData.length === 0) {
+  if (loading || totalCount === 0) {
     return null;
   }
 
@@ -89,18 +105,21 @@ export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) 
           </div>
           <button
             onClick={handleViewData}
-            className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-lg"
+            disabled={recordLoading}
+            className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Browse All Records
           </button>
         </div>
       </div>
 
-      {showModal && (
+      {showModal && currentRecord && (
         <CropDataModal
-          data={cropData}
-          currentIndex={currentDataIndex}
+          data={[currentRecord]}
+          currentIndex={0}
           totalCount={totalCount}
+          absoluteIndex={currentRecordIndex}
+          loading={recordLoading}
           onClose={() => setShowModal(false)}
           onNext={handleNextRecord}
           onPrevious={handlePreviousRecord}

@@ -6,6 +6,8 @@ interface CropDataModalProps {
   data: CropData[];
   currentIndex: number;
   totalCount?: number;
+  absoluteIndex?: number;
+  loading?: boolean;
   onClose: () => void;
   onNext: () => void;
   onPrevious: () => void;
@@ -16,6 +18,8 @@ export default function CropDataModal({
   data,
   currentIndex,
   totalCount,
+  absoluteIndex,
+  loading = false,
   onClose,
   onNext,
   onPrevious,
@@ -26,13 +30,14 @@ export default function CropDataModal({
   if (data.length === 0) return null;
 
   const currentRecord = data[currentIndex];
-  const isFirst = currentIndex === 0;
-  const isLast = currentIndex === data.length - 1;
   const displayTotal = totalCount || data.length;
+  const displayIndex = absoluteIndex !== undefined ? absoluteIndex : currentIndex;
+  const isFirst = displayIndex === 0;
+  const isLast = displayIndex === displayTotal - 1;
 
   const handleGoToRecord = () => {
     const recordNumber = parseInt(recordInput, 10);
-    if (!isNaN(recordNumber) && recordNumber >= 1 && recordNumber <= data.length) {
+    if (!isNaN(recordNumber) && recordNumber >= 1 && recordNumber <= displayTotal && onGoToRecord) {
       onGoToRecord(recordNumber - 1);
       setRecordInput('');
     }
@@ -61,70 +66,76 @@ export default function CropDataModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-emerald-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-emerald-800 mb-1">State</p>
-                <p className="text-lg font-semibold text-emerald-900">{currentRecord.state_name}</p>
-              </div>
-
-              <div className="bg-emerald-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-emerald-800 mb-1">District</p>
-                <p className="text-lg font-semibold text-emerald-900">{currentRecord.district_name}</p>
-              </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
             </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-emerald-50 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-emerald-800 mb-1">State</p>
+                  <p className="text-lg font-semibold text-emerald-900">{currentRecord.state_name}</p>
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-blue-800 mb-1">Crop Year</p>
-                <p className="text-lg font-semibold text-blue-900">{currentRecord.crop_year}</p>
+                <div className="bg-emerald-50 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-emerald-800 mb-1">District</p>
+                  <p className="text-lg font-semibold text-emerald-900">{currentRecord.district_name}</p>
+                </div>
               </div>
 
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-blue-800 mb-1">Season</p>
-                <p className="text-lg font-semibold text-blue-900">{currentRecord.season}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 mb-1">Crop Year</p>
+                  <p className="text-lg font-semibold text-blue-900">{currentRecord.crop_year}</p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 mb-1">Season</p>
+                  <p className="text-lg font-semibold text-blue-900">{currentRecord.season}</p>
+                </div>
               </div>
-            </div>
 
-            <div className="bg-amber-50 p-4 rounded-lg">
-              <p className="text-sm font-medium text-amber-800 mb-1">Crop</p>
-              <p className="text-lg font-semibold text-amber-900">{currentRecord.crop}</p>
-            </div>
+              <div className="bg-amber-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-amber-800 mb-1">Crop</p>
+                <p className="text-lg font-semibold text-amber-900">{currentRecord.crop}</p>
+              </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-purple-800 mb-1">Area (hectares)</p>
-                <p className="text-lg font-semibold text-purple-900">
-                  {currentRecord.area?.toLocaleString() || 'N/A'}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-rose-50 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-rose-800 mb-1">Area (hectares)</p>
+                  <p className="text-lg font-semibold text-rose-900">
+                    {currentRecord.area?.toLocaleString() || 'N/A'}
+                  </p>
+                </div>
+
+                <div className="bg-rose-50 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-rose-800 mb-1">Production (tonnes)</p>
+                  <p className="text-lg font-semibold text-rose-900">
+                    {currentRecord.production?.toLocaleString() || 'N/A'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-700 mb-1">Yield (tonnes/hectare)</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {currentRecord.area && currentRecord.production
+                    ? (currentRecord.production / currentRecord.area).toFixed(2)
+                    : 'N/A'}
                 </p>
               </div>
-
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-purple-800 mb-1">Production (tonnes)</p>
-                <p className="text-lg font-semibold text-purple-900">
-                  {currentRecord.production?.toLocaleString() || 'N/A'}
-                </p>
-              </div>
             </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm font-medium text-gray-700 mb-1">Yield (tonnes/hectare)</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {currentRecord.area && currentRecord.production
-                  ? (currentRecord.production / currentRecord.area).toFixed(2)
-                  : 'N/A'}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="border-t border-gray-200 p-6 bg-gray-50">
           <div className="flex items-center justify-between gap-4">
             <button
               onClick={onPrevious}
-              disabled={isFirst}
+              disabled={isFirst || loading}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                isFirst
+                isFirst || loading
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : 'bg-emerald-600 text-white hover:bg-emerald-700'
               }`}
@@ -135,28 +146,25 @@ export default function CropDataModal({
 
             <div className="flex items-center gap-3">
               <div className="text-sm font-medium text-gray-600 whitespace-nowrap">
-                Record {currentIndex + 1} of {displayTotal.toLocaleString()}
-                {totalCount && totalCount > data.length && (
-                  <span className="text-xs text-gray-500 block">
-                    (Browsing first {data.length.toLocaleString()})
-                  </span>
-                )}
+                Record {displayIndex + 1} of {displayTotal.toLocaleString()}
               </div>
               {onGoToRecord && (
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
                     min="1"
-                    max={data.length}
+                    max={displayTotal}
                     value={recordInput}
                     onChange={(e) => setRecordInput(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Go to..."
-                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    disabled={loading}
+                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <button
                     onClick={handleGoToRecord}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                    disabled={loading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Go
                   </button>
@@ -166,9 +174,9 @@ export default function CropDataModal({
 
             <button
               onClick={onNext}
-              disabled={isLast}
+              disabled={isLast || loading}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                isLast
+                isLast || loading
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : 'bg-emerald-600 text-white hover:bg-emerald-700'
               }`}
