@@ -38,11 +38,11 @@ function App() {
         </div>
 
         <div className="mb-8">
-          <RecommendationEngine onGenerateComplete={handleDataUpdate} />
+          <CropDataViewer refreshTrigger={refreshTrigger} />
         </div>
 
         <div className="mb-8">
-          <CropDataViewer refreshTrigger={refreshTrigger} />
+          <RecommendationEngine onGenerateComplete={handleDataUpdate} />
         </div>
 
         <div className="mb-6">
