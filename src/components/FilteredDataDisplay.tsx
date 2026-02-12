@@ -11,6 +11,7 @@ interface FilteredDataDisplayProps {
 
 export default function FilteredDataDisplay({ state, year, refreshTrigger }: FilteredDataDisplayProps) {
   const [data, setData] = useState<CropData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -20,17 +21,39 @@ export default function FilteredDataDisplay({ state, year, refreshTrigger }: Fil
       fetchFilteredData();
     } else {
       setData([]);
+      setTotalCount(0);
     }
-  }, [state, year, refreshTrigger]);
+  }, [state, year, refreshTrigger, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [state, year]);
 
   const fetchFilteredData = async () => {
     setLoading(true);
     try {
+      let countQuery = supabase
+        .from('crop_production_data')
+        .select('*', { count: 'exact', head: true });
+
+      if (state) {
+        countQuery = countQuery.eq('state_name', state);
+      }
+
+      if (year) {
+        countQuery = countQuery.eq('crop_year', year);
+      }
+
+      const { count, error: countError } = await countQuery;
+      if (countError) throw countError;
+      setTotalCount(count || 0);
+
       let query = supabase
         .from('crop_production_data')
         .select('*')
         .order('crop_year', { ascending: false })
-        .order('state_name');
+        .order('state_name')
+        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
 
       if (state) {
         query = query.eq('state_name', state);
@@ -45,7 +68,6 @@ export default function FilteredDataDisplay({ state, year, refreshTrigger }: Fil
       if (error) throw error;
 
       setData(result || []);
-      setCurrentPage(1);
     } catch (error) {
       console.error('Error fetching filtered data:', error);
     } finally {
@@ -66,7 +88,7 @@ export default function FilteredDataDisplay({ state, year, refreshTrigger }: Fil
     );
   }
 
-  if (data.length === 0) {
+  if (!loading && totalCount === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-8 text-center">
         <Table className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -75,10 +97,9 @@ export default function FilteredDataDisplay({ state, year, refreshTrigger }: Fil
     );
   }
 
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = data.slice(startIndex, endIndex);
+  const endIndex = Math.min(startIndex + itemsPerPage, totalCount);
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -88,7 +109,7 @@ export default function FilteredDataDisplay({ state, year, refreshTrigger }: Fil
           <h3 className="text-xl font-semibold">Filtered Results</h3>
         </div>
         <p className="mt-2 text-emerald-100">
-          Showing {startIndex + 1}-{Math.min(endIndex, data.length)} of {data.length} records
+          Showing {startIndex + 1}-{endIndex} of {totalCount.toLocaleString()} records
         </p>
       </div>
 
@@ -123,7 +144,7 @@ export default function FilteredDataDisplay({ state, year, refreshTrigger }: Fil
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {currentData.map((item, index) => (
+            {data.map((item, index) => (
               <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                 <td className="px-4 py-3 text-sm text-gray-900">{item.state_name}</td>
                 <td className="px-4 py-3 text-sm text-gray-900">{item.district_name}</td>
