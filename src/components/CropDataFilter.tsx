@@ -20,24 +20,37 @@ export default function CropDataFilter({ onFilterApplied }: CropDataFilterProps)
 
   const loadFilters = async () => {
     try {
-      const { data: statesData } = await supabase
-        .from('crop_production_data')
-        .select('state_name')
-        .order('state_name');
+      const { data: statesData, error: statesError } = await supabase.rpc('get_distinct_states');
+      const { data: yearsData, error: yearsError } = await supabase.rpc('get_distinct_years');
 
-      const { data: yearsData } = await supabase
-        .from('crop_production_data')
-        .select('crop_year')
-        .order('crop_year', { ascending: false });
+      if (statesError) {
+        console.error('Error loading states:', statesError);
+        const { data: fallbackStates } = await supabase
+          .from('crop_production_data')
+          .select('state_name')
+          .limit(5000);
 
-      if (statesData) {
-        const uniqueStates = [...new Set(statesData.map(d => d.state_name))];
-        setStates(uniqueStates);
+        if (fallbackStates) {
+          const uniqueStates = [...new Set(fallbackStates.map(d => d.state_name))].sort();
+          setStates(uniqueStates);
+        }
+      } else if (statesData) {
+        setStates(statesData.map((d: any) => d.state_name));
       }
 
-      if (yearsData) {
-        const uniqueYears = [...new Set(yearsData.map(d => d.crop_year))];
-        setYears(uniqueYears);
+      if (yearsError) {
+        console.error('Error loading years:', yearsError);
+        const { data: fallbackYears } = await supabase
+          .from('crop_production_data')
+          .select('crop_year')
+          .limit(5000);
+
+        if (fallbackYears) {
+          const uniqueYears = [...new Set(fallbackYears.map(d => d.crop_year))].sort().reverse();
+          setYears(uniqueYears);
+        }
+      } else if (yearsData) {
+        setYears(yearsData.map((d: any) => d.crop_year));
       }
     } catch (error) {
       console.error('Error loading filters:', error);
