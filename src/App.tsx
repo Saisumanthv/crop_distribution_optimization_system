@@ -33,21 +33,6 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-start gap-3">
-            <Info className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-semibold text-blue-900 mb-2">About This System</h3>
-              <p className="text-blue-800 text-sm leading-relaxed">
-                This platform analyzes district-wise crop production data from across India to generate optimal
-                inter-state transaction recommendations. It considers transportation costs, distance, and environmental
-                impact to suggest the most efficient crop distribution routes between surplus and deficit states.
-                The system uses predictive analytics to forecast production for future years based on historical trends.
-              </p>
-            </div>
-          </div>
-        </div>
-
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <DataFetcher onFetchComplete={handleDataUpdate} />
           <RecommendationEngine onGenerateComplete={handleDataUpdate} />

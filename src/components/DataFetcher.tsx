@@ -19,27 +19,12 @@ const CROP_YEARS = [
   "2010-11", "2011-12", "2012-13", "2013-14", "2014-15"
 ];
 
-const RECOMMENDED_COMBINATIONS = [
-  { state: "Punjab", year: "2010-11", description: "Punjab - Strong rice & wheat data" },
-  { state: "Haryana", year: "2011-12", description: "Haryana - Comprehensive crop data" },
-  { state: "Uttar Pradesh", year: "2012-13", description: "Uttar Pradesh - Large dataset" },
-  { state: "Karnataka", year: "2010-11", description: "Karnataka - Diverse crops" },
-  { state: "Maharashtra", year: "2011-12", description: "Maharashtra - Complete records" },
-];
-
 export default function DataFetcher({ onFetchComplete }: DataFetcherProps) {
   const [selectedState, setSelectedState] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-
-  const loadRecommendedData = (state: string, year: string) => {
-    setSelectedState(state);
-    setSelectedYear(year);
-    setError('');
-    setMessage('');
-  };
 
   const handleFetch = async () => {
     if (!selectedState || !selectedYear) {
@@ -67,7 +52,7 @@ export default function DataFetcher({ onFetchComplete }: DataFetcherProps) {
       if (data.error) {
         setError(data.error);
       } else if (data.recordsFound === 0) {
-        setError(`No data available for ${selectedState} (${selectedYear}) in the data.gov.in database. This is common - the government database has incomplete coverage. Try one of the recommended combinations above, or experiment with different states and years (Punjab, Haryana, Karnataka, and Maharashtra typically have better data coverage).`);
+        setError(`No data available for ${selectedState} (${selectedYear}) in the data.gov.in database. This is common - the government database has incomplete coverage. Try different states and years (Punjab, Haryana, Karnataka, and Maharashtra typically have better data coverage).`);
       } else {
         setMessage(data.message || `Successfully fetched ${data.recordsFound} records`);
         setTimeout(() => {
@@ -86,22 +71,6 @@ export default function DataFetcher({ onFetchComplete }: DataFetcherProps) {
       <div className="flex items-center gap-3 mb-6">
         <Download className="w-6 h-6 text-emerald-600" />
         <h2 className="text-xl font-semibold text-gray-800">Import Crop Data</h2>
-      </div>
-
-      <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-        <p className="text-sm font-medium text-emerald-900 mb-2">Quick Start - Try These:</p>
-        <div className="flex flex-wrap gap-2">
-          {RECOMMENDED_COMBINATIONS.map((combo, idx) => (
-            <button
-              key={idx}
-              onClick={() => loadRecommendedData(combo.state, combo.year)}
-              className="px-3 py-1.5 bg-white border border-emerald-300 rounded-md text-xs text-emerald-800 hover:bg-emerald-100 transition-colors"
-              disabled={loading}
-            >
-              {combo.state} ({combo.year})
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 mb-4">
@@ -181,7 +150,7 @@ export default function DataFetcher({ onFetchComplete }: DataFetcherProps) {
             <p className="font-medium mb-1">Important Information:</p>
             <ul className="list-disc list-inside space-y-1 text-xs">
               <li><strong>Data Coverage:</strong> The data.gov.in API has incomplete records. Many state-year combinations return no data</li>
-              <li><strong>Best Results:</strong> Use the quick start buttons above for guaranteed data availability</li>
+              <li><strong>Best Results:</strong> Punjab, Haryana, Karnataka, and Maharashtra typically have better data coverage</li>
               <li><strong>Date Range:</strong> API covers 1997-98 to 2014-15, but not all states have data for all years</li>
               <li><strong>Telangana Note:</strong> Telangana formed in 2014. Use "Andhra Pradesh" for earlier years</li>
             </ul>
