@@ -104,7 +104,8 @@ Deno.serve(async (req: Request) => {
       const { error: deleteError } = await supabase
         .from("crop_production_data")
         .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000");
+        .eq("state_name", stateName)
+        .eq("crop_year", cropYear);
 
       if (deleteError) {
         console.error("Delete error:", deleteError);
