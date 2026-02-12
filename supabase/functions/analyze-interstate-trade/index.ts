@@ -124,19 +124,57 @@ Deno.serve(async (req: Request) => {
 
     if (distancesError) throw distancesError;
 
+    const distanceCache = new Map<string, number>();
+
     // Helper function to get distance between two states (checks both directions)
-    const getDistance = (state1: string, state2: string): number => {
+    const getDistance = async (state1: string, state2: string): Promise<number> => {
+      const cacheKey = [state1, state2].sort().join("-");
+
+      if (distanceCache.has(cacheKey)) {
+        return distanceCache.get(cacheKey)!;
+      }
+
       const distance = distances?.find((d: any) =>
         (d.state_from === state1 && d.state_to === state2) ||
         (d.state_from === state2 && d.state_to === state1)
       );
-      return distance ? parseFloat(distance.distance_km) : 9999;
+
+      if (distance) {
+        const distKm = parseFloat(distance.distance_km);
+        distanceCache.set(cacheKey, distKm);
+        return distKm;
+      }
+
+      try {
+        const googleMapsApiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+        if (!googleMapsApiKey) {
+          distanceCache.set(cacheKey, 9999);
+          return 9999;
+        }
+
+        const calcUrl = new URL(`${supabaseUrl}/functions/v1/calculate-distance`);
+        calcUrl.searchParams.append("origin", state1);
+        calcUrl.searchParams.append("destination", state2);
+
+        const calcResponse = await fetch(calcUrl.toString());
+        const calcData = await calcResponse.json();
+
+        if (calcData.distance_km) {
+          distanceCache.set(cacheKey, calcData.distance_km);
+          return calcData.distance_km;
+        }
+      } catch (error) {
+        console.error(`Error calculating distance between ${state1} and ${state2}:`, error);
+      }
+
+      distanceCache.set(cacheKey, 9999);
+      return 9999;
     };
 
     // SELL RECOMMENDATIONS: Find crops where state has surplus
     const sellRecommendations: TradeRecommendation[] = [];
 
-    stateProduction.forEach((production, crop) => {
+    for (const [crop, production] of stateProduction.entries()) {
       const avgProduction = cropAverages.get(crop) || 0;
 
       // If state produces 20% more than average, consider it surplus
@@ -145,17 +183,20 @@ Deno.serve(async (req: Request) => {
 
         // Find states that need this crop (produce less than average)
         const needyStates: Array<{state: string, deficit: number, distance: number}> = [];
+        const cropStateMap = cropStateTotals.get(crop);
 
-        cropStateTotals.get(crop)?.forEach((prod, state) => {
-          if (state !== stateName && prod < avgProduction * 0.8) {
-            const distance = getDistance(stateName, state);
-            needyStates.push({
-              state,
-              deficit: avgProduction - prod,
-              distance
-            });
+        if (cropStateMap) {
+          for (const [state, prod] of cropStateMap.entries()) {
+            if (state !== stateName && prod < avgProduction * 0.8) {
+              const distance = await getDistance(stateName, state);
+              needyStates.push({
+                state,
+                deficit: avgProduction - prod,
+                distance
+              });
+            }
           }
-        });
+        }
 
         // Sort by distance (nearest first)
         needyStates.sort((a, b) => a.distance - b.distance);
@@ -176,12 +217,12 @@ Deno.serve(async (req: Request) => {
           });
         });
       }
-    });
+    }
 
     // BUY RECOMMENDATIONS: Find crops where state has deficit
     const buyRecommendations: TradeRecommendation[] = [];
 
-    cropAverages.forEach((avgProduction, crop) => {
+    for (const [crop, avgProduction] of cropAverages.entries()) {
       const stateProdn = stateProduction.get(crop) || 0;
 
       // If state produces 20% less than average, consider it deficit
@@ -190,17 +231,20 @@ Deno.serve(async (req: Request) => {
 
         // Find states that have surplus of this crop
         const surplusStates: Array<{state: string, surplus: number, distance: number}> = [];
+        const cropStateMap = cropStateTotals.get(crop);
 
-        cropStateTotals.get(crop)?.forEach((prod, state) => {
-          if (state !== stateName && prod > avgProduction * 1.2) {
-            const distance = getDistance(stateName, state);
-            surplusStates.push({
-              state,
-              surplus: prod - avgProduction,
-              distance
-            });
+        if (cropStateMap) {
+          for (const [state, prod] of cropStateMap.entries()) {
+            if (state !== stateName && prod > avgProduction * 1.2) {
+              const distance = await getDistance(stateName, state);
+              surplusStates.push({
+                state,
+                surplus: prod - avgProduction,
+                distance
+              });
+            }
           }
-        });
+        }
 
         // Sort by distance (nearest first)
         surplusStates.sort((a, b) => a.distance - b.distance);
@@ -221,7 +265,7 @@ Deno.serve(async (req: Request) => {
           });
         });
       }
-    });
+    }
 
     return new Response(
       JSON.stringify({
