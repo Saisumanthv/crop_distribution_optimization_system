@@ -194,18 +194,6 @@ export default function RecommendationEngine({ onGenerateComplete }: Recommendat
           {error}
         </div>
       )}
-
-      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-900 mb-2">
-          <strong>AI-Powered Features:</strong>
-        </p>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-          <li>Machine learning predictions for future years based on historical trends</li>
-          <li>OpenAI-enhanced recommendations with expert agricultural insights</li>
-          <li>Major crops like Rice are prioritized based on regional importance</li>
-          <li>Context-aware strategies considering economic viability and market demand</li>
-        </ul>
-      </div>
     </div>
   );
 }

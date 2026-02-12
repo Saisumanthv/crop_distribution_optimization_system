@@ -131,7 +131,7 @@ export default function CropStrategiesViewer({ refreshTrigger }: CropStrategiesV
         <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h3 className="text-xl font-semibold text-gray-700 mb-2">No Crop Strategies Generated Yet</h3>
         <p className="text-gray-500">
-          Use the "Generate Crop Growing Strategies" section above to create AI-powered recommendations.
+          Use the "Generate Crop Growing Strategies" section above to create recommendations.
         </p>
       </div>
     );
