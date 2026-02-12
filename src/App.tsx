@@ -1,14 +1,24 @@
 import { useState } from 'react';
 import { Wheat, BarChart3, Info } from 'lucide-react';
+import CropDataFilter from './components/CropDataFilter';
+import FilteredDataDisplay from './components/FilteredDataDisplay';
 import RecommendationEngine from './components/RecommendationEngine';
 import Dashboard from './components/Dashboard';
 import CropDataViewer from './components/CropDataViewer';
 
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [filterState, setFilterState] = useState('');
+  const [filterYear, setFilterYear] = useState('');
 
   const handleDataUpdate = () => {
     setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleFilterApplied = (state: string, year: string) => {
+    setFilterState(state);
+    setFilterYear(year);
+    handleDataUpdate();
   };
 
   return (
@@ -32,6 +42,18 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <CropDataFilter onFilterApplied={handleFilterApplied} />
+        </div>
+
+        <div className="mb-8">
+          <FilteredDataDisplay
+            state={filterState}
+            year={filterYear}
+            refreshTrigger={refreshTrigger}
+          />
+        </div>
+
         <div className="mb-8">
           <CropDataViewer refreshTrigger={refreshTrigger} />
         </div>

@@ -24,8 +24,7 @@ export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) 
       const { data, error } = await supabase
         .from('crop_production_data')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1000);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
