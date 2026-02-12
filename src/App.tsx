@@ -5,6 +5,7 @@ import FilteredDataDisplay from './components/FilteredDataDisplay';
 import RecommendationEngine from './components/RecommendationEngine';
 import Dashboard from './components/Dashboard';
 import CropDataViewer from './components/CropDataViewer';
+import InterstateTradeAnalysis from './components/InterstateTradeAnalysis';
 
 function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -60,6 +61,10 @@ function App() {
 
         <div className="mb-8">
           <RecommendationEngine onGenerateComplete={handleDataUpdate} />
+        </div>
+
+        <div className="mb-8">
+          <InterstateTradeAnalysis />
         </div>
 
         <div className="mb-6">
