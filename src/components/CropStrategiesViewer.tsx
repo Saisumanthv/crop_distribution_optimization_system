@@ -88,12 +88,6 @@ export default function CropStrategiesViewer({ refreshTrigger }: CropStrategiesV
       if (statesQuery.data) {
         const uniqueStates = [...new Set(statesQuery.data.map(s => s.state_name))];
         setAvailableStates(uniqueStates);
-        // Auto-select first state if no state is selected OR if current state is not in the list
-        if (uniqueStates.length > 0) {
-          if (!selectedState || !uniqueStates.includes(selectedState)) {
-            setSelectedState(uniqueStates[0]);
-          }
-        }
       }
 
       const yearsQuery = await supabase
@@ -104,9 +98,6 @@ export default function CropStrategiesViewer({ refreshTrigger }: CropStrategiesV
       if (yearsQuery.data) {
         const uniqueYears = [...new Set(yearsQuery.data.map(s => s.crop_year))];
         setAvailableYears(uniqueYears);
-        if (!selectedYear && uniqueYears.length > 0) {
-          setSelectedYear(uniqueYears[0]);
-        }
       }
     } catch (error) {
       console.error('Error fetching strategies:', error);
@@ -134,9 +125,9 @@ export default function CropStrategiesViewer({ refreshTrigger }: CropStrategiesV
     return (
       <div className="bg-white rounded-lg shadow-md p-8 text-center">
         <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-700 mb-2">No Crop Strategies Yet</h3>
+        <h3 className="text-xl font-semibold text-gray-700 mb-2">No Crop Strategies Generated Yet</h3>
         <p className="text-gray-500">
-          Select a state and year, then generate crop strategies to see recommendations.
+          Use the "Generate Crop Growing Strategies" section above to create AI-powered recommendations.
         </p>
       </div>
     );
