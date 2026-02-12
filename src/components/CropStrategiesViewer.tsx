@@ -32,6 +32,32 @@ export default function CropStrategiesViewer({ refreshTrigger }: CropStrategiesV
     fetchStrategies();
   }, [refreshTrigger, selectedState, selectedYear]);
 
+  // Separate effect to detect when refreshTrigger changes (indicating new generation)
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchMostRecentState();
+    }
+  }, [refreshTrigger]);
+
+  const fetchMostRecentState = async () => {
+    try {
+      // Get the most recently created strategy to determine which state to show
+      const { data: recentStrategy } = await supabase
+        .from('crop_strategies')
+        .select('state_name, crop_year')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (recentStrategy) {
+        setSelectedState(recentStrategy.state_name);
+        setSelectedYear(recentStrategy.crop_year);
+      }
+    } catch (error) {
+      console.error('Error fetching most recent state:', error);
+    }
+  };
+
   const fetchStrategies = async () => {
     setLoading(true);
     try {
@@ -62,8 +88,11 @@ export default function CropStrategiesViewer({ refreshTrigger }: CropStrategiesV
       if (statesQuery.data) {
         const uniqueStates = [...new Set(statesQuery.data.map(s => s.state_name))];
         setAvailableStates(uniqueStates);
-        if (!selectedState && uniqueStates.length > 0) {
-          setSelectedState(uniqueStates[0]);
+        // Auto-select first state if no state is selected OR if current state is not in the list
+        if (uniqueStates.length > 0) {
+          if (!selectedState || !uniqueStates.includes(selectedState)) {
+            setSelectedState(uniqueStates[0]);
+          }
         }
       }
 
