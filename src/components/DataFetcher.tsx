@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Loader2, AlertCircle } from 'lucide-react';
+import { Download, Loader2, AlertCircle, Database } from 'lucide-react';
 
 interface DataFetcherProps {
   onFetchComplete: () => void;
@@ -23,6 +23,7 @@ export default function DataFetcher({ onFetchComplete }: DataFetcherProps) {
   const [selectedState, setSelectedState] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [loading, setLoading] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -63,6 +64,42 @@ export default function DataFetcher({ onFetchComplete }: DataFetcherProps) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (!confirm('This will fetch ALL crop data from data.gov.in for all states and years (1997-2014). This may take several minutes. Continue?')) {
+      return;
+    }
+
+    setBulkLoading(true);
+    setError('');
+    setMessage('Bulk import started. This will take several minutes...');
+
+    try {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bulk-import-crop-data`;
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        setError(data.error);
+        setMessage('');
+      } else {
+        setMessage(data.message || `Successfully imported ${data.totalRecords} records from ${data.successfulImports} state-year combinations`);
+        setTimeout(() => {
+          onFetchComplete();
+        }, 2000);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to bulk import data');
+      setMessage('');
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -113,23 +150,43 @@ export default function DataFetcher({ onFetchComplete }: DataFetcherProps) {
         </div>
       </div>
 
-      <button
-        onClick={handleFetch}
-        disabled={loading || !selectedState || !selectedYear}
-        className="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Fetching Data...
-          </>
-        ) : (
-          <>
-            <Download className="w-5 h-5" />
-            Import from data.gov.in
-          </>
-        )}
-      </button>
+      <div className="grid md:grid-cols-2 gap-4">
+        <button
+          onClick={handleFetch}
+          disabled={loading || bulkLoading || !selectedState || !selectedYear}
+          className="bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Fetching Data...
+            </>
+          ) : (
+            <>
+              <Download className="w-5 h-5" />
+              Import Single State/Year
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={handleBulkImport}
+          disabled={loading || bulkLoading}
+          className="bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        >
+          {bulkLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Importing All Data...
+            </>
+          ) : (
+            <>
+              <Database className="w-5 h-5" />
+              Bulk Import All Data
+            </>
+          )}
+        </button>
+      </div>
 
       {message && (
         <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700">
@@ -147,11 +204,12 @@ export default function DataFetcher({ onFetchComplete }: DataFetcherProps) {
         <div className="flex items-start gap-2">
           <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">Important Information:</p>
+            <p className="font-medium mb-1">Import Options:</p>
             <ul className="list-disc list-inside space-y-1 text-xs">
+              <li><strong>Single Import:</strong> Fetch data for a specific state and year combination</li>
+              <li><strong>Bulk Import:</strong> Automatically fetch ALL available crop data from data.gov.in (1997-2014) for all states. This will take several minutes but only needs to be done once</li>
               <li><strong>Data Coverage:</strong> The data.gov.in API has incomplete records. Many state-year combinations return no data</li>
               <li><strong>Best Results:</strong> Punjab, Haryana, Karnataka, and Maharashtra typically have better data coverage</li>
-              <li><strong>Date Range:</strong> API covers 1997-98 to 2014-15, but not all states have data for all years</li>
               <li><strong>Telangana Note:</strong> Telangana formed in 2014. Use "Andhra Pradesh" for earlier years</li>
             </ul>
           </div>
