@@ -116,18 +116,22 @@ Deno.serve(async (req: Request) => {
       stateProduction.set(crop, current + production);
     });
 
-    // Get interstate distances
+    // Get interstate distances (bidirectional)
     const { data: distances, error: distancesError } = await supabase
       .from("interstate_distances")
       .select("*")
-      .eq("state_from", stateName);
+      .or(`state_from.eq.${stateName},state_to.eq.${stateName}`);
 
     if (distancesError) throw distancesError;
 
-    const stateDistances = new Map<string, number>();
-    distances?.forEach((d: any) => {
-      stateDistances.set(d.state_to, parseFloat(d.distance_km));
-    });
+    // Helper function to get distance between two states (checks both directions)
+    const getDistance = (state1: string, state2: string): number => {
+      const distance = distances?.find((d: any) =>
+        (d.state_from === state1 && d.state_to === state2) ||
+        (d.state_from === state2 && d.state_to === state1)
+      );
+      return distance ? parseFloat(distance.distance_km) : 9999;
+    };
 
     // SELL RECOMMENDATIONS: Find crops where state has surplus
     const sellRecommendations: TradeRecommendation[] = [];
@@ -144,7 +148,7 @@ Deno.serve(async (req: Request) => {
 
         cropStateTotals.get(crop)?.forEach((prod, state) => {
           if (state !== stateName && prod < avgProduction * 0.8) {
-            const distance = stateDistances.get(state) || 9999;
+            const distance = getDistance(stateName, state);
             needyStates.push({
               state,
               deficit: avgProduction - prod,
@@ -189,7 +193,7 @@ Deno.serve(async (req: Request) => {
 
         cropStateTotals.get(crop)?.forEach((prod, state) => {
           if (state !== stateName && prod > avgProduction * 1.2) {
-            const distance = stateDistances.get(state) || 9999;
+            const distance = getDistance(stateName, state);
             surplusStates.push({
               state,
               surplus: prod - avgProduction,
