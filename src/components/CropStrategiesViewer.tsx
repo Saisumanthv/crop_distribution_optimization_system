@@ -151,28 +151,12 @@ export default function CropStrategiesViewer({ refreshTrigger }: CropStrategiesV
             <h2 className="text-xl font-semibold text-gray-800">Crop Growing Strategies</h2>
           </div>
           <div className="flex items-center gap-3">
-            <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            >
-              {availableStates.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            >
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+            <div className="bg-emerald-50 px-4 py-2 rounded-lg">
+              <p className="text-sm text-emerald-700 font-medium">{selectedState}</p>
+            </div>
+            <div className="bg-blue-50 px-4 py-2 rounded-lg">
+              <p className="text-sm text-blue-700 font-medium">{selectedYear}</p>
+            </div>
           </div>
         </div>
 
