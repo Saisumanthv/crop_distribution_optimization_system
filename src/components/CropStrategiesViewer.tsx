@@ -61,14 +61,18 @@ export default function CropStrategiesViewer({ refreshTrigger }: CropStrategiesV
   const fetchStrategies = async () => {
     setLoading(true);
     try {
+      // Don't fetch any strategies if no state is selected
+      if (!selectedState) {
+        setStrategies([]);
+        setLoading(false);
+        return;
+      }
+
       let query = supabase
         .from('crop_strategies')
         .select('*')
-        .order('priority_score', { ascending: false });
-
-      if (selectedState) {
-        query = query.eq('state_name', selectedState);
-      }
+        .order('priority_score', { ascending: false })
+        .eq('state_name', selectedState);
 
       if (selectedYear) {
         query = query.eq('crop_year', selectedYear);
