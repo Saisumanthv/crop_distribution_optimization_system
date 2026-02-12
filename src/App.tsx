@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Wheat, BarChart3, Info } from 'lucide-react';
-import DataFetcher from './components/DataFetcher';
 import RecommendationEngine from './components/RecommendationEngine';
 import Dashboard from './components/Dashboard';
 import CropDataViewer from './components/CropDataViewer';
@@ -33,10 +32,6 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <DataFetcher onFetchComplete={handleDataUpdate} />
-        </div>
-
         <div className="mb-8">
           <CropDataViewer refreshTrigger={refreshTrigger} />
         </div>
