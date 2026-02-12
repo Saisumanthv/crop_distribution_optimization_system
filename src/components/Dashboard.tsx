@@ -14,6 +14,7 @@ export default function Dashboard({ refreshTrigger }: DashboardProps) {
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [cropData, setCropData] = useState<CropData[]>([]);
+  const [totalDataCount, setTotalDataCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [currentDataIndex, setCurrentDataIndex] = useState(0);
 
@@ -24,10 +25,23 @@ export default function Dashboard({ refreshTrigger }: DashboardProps) {
 
   const fetchCropData = async () => {
     try {
+      let countQuery = supabase
+        .from('crop_production_data')
+        .select('*', { count: 'exact', head: true });
+
+      if (selectedYear) {
+        countQuery = countQuery.eq('crop_year', selectedYear);
+      }
+
+      const { count, error: countError } = await countQuery;
+      if (countError) throw countError;
+      setTotalDataCount(count || 0);
+
       let query = supabase
         .from('crop_production_data')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1000);
 
       if (selectedYear) {
         query = query.eq('crop_year', selectedYear);
@@ -134,13 +148,13 @@ export default function Dashboard({ refreshTrigger }: DashboardProps) {
             <h2 className="text-xl font-semibold text-gray-800">Transaction Recommendations</h2>
           </div>
           <div className="flex items-center gap-3">
-            {cropData.length > 0 && (
+            {totalDataCount > 0 && (
               <button
                 onClick={handleViewCropData}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 <Database className="w-5 h-5" />
-                View All Data ({cropData.length})
+                View All Data ({totalDataCount.toLocaleString()})
               </button>
             )}
             <select
@@ -268,6 +282,7 @@ export default function Dashboard({ refreshTrigger }: DashboardProps) {
         <CropDataModal
           data={cropData}
           currentIndex={currentDataIndex}
+          totalCount={totalDataCount}
           onClose={() => setShowModal(false)}
           onNext={handleNextRecord}
           onPrevious={handlePreviousRecord}

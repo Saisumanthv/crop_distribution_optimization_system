@@ -5,15 +5,17 @@ import { CropData } from '../types';
 interface CropDataModalProps {
   data: CropData[];
   currentIndex: number;
+  totalCount?: number;
   onClose: () => void;
   onNext: () => void;
   onPrevious: () => void;
-  onGoToRecord: (index: number) => void;
+  onGoToRecord?: (index: number) => void;
 }
 
 export default function CropDataModal({
   data,
   currentIndex,
+  totalCount,
   onClose,
   onNext,
   onPrevious,
@@ -26,6 +28,7 @@ export default function CropDataModal({
   const currentRecord = data[currentIndex];
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === data.length - 1;
+  const displayTotal = totalCount || data.length;
 
   const handleGoToRecord = () => {
     const recordNumber = parseInt(recordInput, 10);
@@ -132,26 +135,33 @@ export default function CropDataModal({
 
             <div className="flex items-center gap-3">
               <div className="text-sm font-medium text-gray-600 whitespace-nowrap">
-                Record {currentIndex + 1} of {data.length}
+                Record {currentIndex + 1} of {displayTotal.toLocaleString()}
+                {totalCount && totalCount > data.length && (
+                  <span className="text-xs text-gray-500 block">
+                    (Browsing first {data.length.toLocaleString()})
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max={data.length}
-                  value={recordInput}
-                  onChange={(e) => setRecordInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Go to..."
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                />
-                <button
-                  onClick={handleGoToRecord}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
-                >
-                  Go
-                </button>
-              </div>
+              {onGoToRecord && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max={data.length}
+                    value={recordInput}
+                    onChange={(e) => setRecordInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Go to..."
+                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                  <button
+                    onClick={handleGoToRecord}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Go
+                  </button>
+                </div>
+              )}
             </div>
 
             <button

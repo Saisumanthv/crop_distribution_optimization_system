@@ -10,6 +10,7 @@ interface CropDataViewerProps {
 
 export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) {
   const [cropData, setCropData] = useState<CropData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [currentDataIndex, setCurrentDataIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -21,10 +22,18 @@ export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) 
   const fetchCropData = async () => {
     setLoading(true);
     try {
+      const { count, error: countError } = await supabase
+        .from('crop_production_data')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) throw countError;
+      setTotalCount(count || 0);
+
       const { data, error } = await supabase
         .from('crop_production_data')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1000);
 
       if (error) throw error;
 
@@ -75,7 +84,7 @@ export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) 
               <h3 className="text-2xl font-bold">Imported Crop Data</h3>
             </div>
             <p className="text-blue-100">
-              {cropData.length.toLocaleString()} records available for analysis
+              {totalCount.toLocaleString()} records available for analysis
             </p>
           </div>
           <button
@@ -91,6 +100,7 @@ export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) 
         <CropDataModal
           data={cropData}
           currentIndex={currentDataIndex}
+          totalCount={totalCount}
           onClose={() => setShowModal(false)}
           onNext={handleNextRecord}
           onPrevious={handlePreviousRecord}
