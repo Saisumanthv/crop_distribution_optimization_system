@@ -69,6 +69,11 @@ export default function RecommendationEngine({ onGenerateComplete }: Recommendat
         url += `&crop=${encodeURIComponent(specificCrop)}`;
       }
 
+      const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (openaiKey && openaiKey.trim()) {
+        url += `&openai_key=${encodeURIComponent(openaiKey)}`;
+      }
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -81,8 +86,9 @@ export default function RecommendationEngine({ onGenerateComplete }: Recommendat
         setError(data.error);
       } else {
         const predictionNote = data.is_prediction ? ' (using predictive analytics)' : '';
+        const aiNote = data.ai_powered ? ' with AI-enhanced recommendations' : '';
         setMessage(
-          `Generated ${data.strategies_count} crop growing strategies for ${selectedState} in ${cropYear}${predictionNote}`
+          `Generated ${data.strategies_count} crop growing strategies for ${selectedState} in ${cropYear}${predictionNote}${aiNote}`
         );
         setTimeout(() => {
           onGenerateComplete();
@@ -189,10 +195,16 @@ export default function RecommendationEngine({ onGenerateComplete }: Recommendat
         </div>
       )}
 
-      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-        <p className="text-sm text-amber-800">
-          <strong>Note:</strong> Strategies for years after 2015 use machine learning to predict optimal crop yields based on historical trends.
+      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-900 mb-2">
+          <strong>AI-Powered Features:</strong>
         </p>
+        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+          <li>Machine learning predictions for future years based on historical trends</li>
+          <li>OpenAI-enhanced recommendations with expert agricultural insights</li>
+          <li>Major crops like Rice are prioritized based on regional importance</li>
+          <li>Context-aware strategies considering economic viability and market demand</li>
+        </ul>
       </div>
     </div>
   );
