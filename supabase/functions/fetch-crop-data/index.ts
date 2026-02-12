@@ -101,6 +101,16 @@ Deno.serve(async (req: Request) => {
     if (allRecords.length > 0) {
       console.log("Sample raw record:", JSON.stringify(allRecords[0]));
 
+      const { error: deleteError } = await supabase
+        .from("crop_production_data")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+
+      if (deleteError) {
+        console.error("Delete error:", deleteError);
+        throw new Error(`Failed to clear existing data: ${deleteError.message}`);
+      }
+
       const formattedRecords = allRecords.map((record: any) => {
         const area = parseFloat(record.area_ || record.area || record.Area || "0") || 0;
         const production = parseFloat(record.production_ || record.production || record.Production || "0") || 0;
@@ -120,9 +130,7 @@ Deno.serve(async (req: Request) => {
 
       const { error: insertError } = await supabase
         .from("crop_production_data")
-        .upsert(formattedRecords, {
-          onConflict: "state_name,district_name,crop_year,season,crop",
-        });
+        .insert(formattedRecords);
 
       if (insertError) {
         console.error("Insert error:", insertError);
