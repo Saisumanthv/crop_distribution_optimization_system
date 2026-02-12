@@ -56,6 +56,12 @@ export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) 
     }
   };
 
+  const handleGoToRecord = (index: number) => {
+    if (index >= 0 && index < cropData.length) {
+      setCurrentDataIndex(index);
+    }
+  };
+
   if (loading || cropData.length === 0) {
     return null;
   }
@@ -89,6 +95,7 @@ export default function CropDataViewer({ refreshTrigger }: CropDataViewerProps) 
           onClose={() => setShowModal(false)}
           onNext={handleNextRecord}
           onPrevious={handlePreviousRecord}
+          onGoToRecord={handleGoToRecord}
         />
       )}
     </>

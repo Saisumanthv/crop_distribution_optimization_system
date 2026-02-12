@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CropData } from '../types';
 
@@ -7,6 +8,7 @@ interface CropDataModalProps {
   onClose: () => void;
   onNext: () => void;
   onPrevious: () => void;
+  onGoToRecord: (index: number) => void;
 }
 
 export default function CropDataModal({
@@ -14,13 +16,30 @@ export default function CropDataModal({
   currentIndex,
   onClose,
   onNext,
-  onPrevious
+  onPrevious,
+  onGoToRecord
 }: CropDataModalProps) {
+  const [recordInput, setRecordInput] = useState('');
+
   if (data.length === 0) return null;
 
   const currentRecord = data[currentIndex];
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === data.length - 1;
+
+  const handleGoToRecord = () => {
+    const recordNumber = parseInt(recordInput, 10);
+    if (!isNaN(recordNumber) && recordNumber >= 1 && recordNumber <= data.length) {
+      onGoToRecord(recordNumber - 1);
+      setRecordInput('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleGoToRecord();
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -97,7 +116,7 @@ export default function CropDataModal({
         </div>
 
         <div className="border-t border-gray-200 p-6 bg-gray-50">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <button
               onClick={onPrevious}
               disabled={isFirst}
@@ -111,8 +130,28 @@ export default function CropDataModal({
               Previous
             </button>
 
-            <div className="text-sm font-medium text-gray-600">
-              Record {currentIndex + 1} of {data.length}
+            <div className="flex items-center gap-3">
+              <div className="text-sm font-medium text-gray-600 whitespace-nowrap">
+                Record {currentIndex + 1} of {data.length}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max={data.length}
+                  value={recordInput}
+                  onChange={(e) => setRecordInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Go to..."
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleGoToRecord}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Go
+                </button>
+              </div>
             </div>
 
             <button
